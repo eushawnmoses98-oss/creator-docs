@@ -1,73 +1,829 @@
----
-title: Roblox Studio setup
-description: Explains how to install Roblox Studio on your system.
----
+-- LocalScript (place in StarterPlayerScripts)
 
-Create immersive 3D experiences on Roblox with **Roblox Studio**, a free application available on Windows and Mac.
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
-## System requirements
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-<table style={{width: '75%'}} size="small">
-<thead>
-<tr>
-<th></th>
-<th><Chip label="MINIMUM" size="medium" color="warning" variant="outlined" /></th>
-<th><Chip label="RECOMMENDED" size="medium" color="success" variant="outlined" /></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>**OS Version**</td>
-<td>Windows 10<br />macOS 10.14</td>
-<td>Windows 11<br />macOS 14+</td>
-</tr>
-<tr>
-<td>**Memory (RAM)**</td>
-<td>3 GB</td>
-<td>8 GB</td>
-</tr>
-<tr>
-<td>**Resolution**</td>
-<td></td>
-<td>1600&times;900 or higher</td>
-</tr>
-</tbody>
-</table>
+-- Configuration
+local colorEnergy = Color3.fromRGB(255, 0, 0) -- Change this to any color
+local energyRadius = 5
+local pulseSpeed = 2
 
-## Installation
+-- Create the aura
+local aura = Instance.new("Part")
+aura.Name = "ColorEnergyAura"
+aura.Size = Vector3.new(energyRadius*2, energyRadius*2, energyRadius*2)
+aura.Transparency = 0.5
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = colorEnergy
+aura.Parent = workspace
 
-1. Click the following **Download Studio** button.
+-- Update aura position
+RunService.RenderStepped:Connect(function(time)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        -- Optional pulsing effect
+        local scale = (math.sin(time * pulseSpeed) + 1)/2 + 0.5
+        aura.Size = Vector3.new(energyRadius*2, energyRadius*2, energyRadius*2) * scale
+        aura.Transparency = 0.5 - (scale/4)
+    end
+end)
 
-   <UseStudioButton variant='blueLogoIconButton' />
+-- Optional: Change color dynamically
+local function setColor(newColor)
+    colorEnergy = newColor
+    aura.Color = colorEnergy
+end
 
-1. In the pop-up dialog, click the **Download Studio** button.
-1. Find the Studio installer in your browser's download history and double-click the file.
+-- Example usage: setColor(Color3.fromRGB(0, 0, 255))
+-- LocalScript (StarterPlayerScripts)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-   - On Windows, the file is `RobloxStudio.exe`.
-   - On Mac, the file is `RobloxStudio.dmg`.
+-- Color Energy Data
+local ColorEnergy = {
+    Red = {Color = Color3.fromRGB(255,0,0), DamageBoost = 1.2, SpeedBoost = 1},
+    Blue = {Color = Color3.fromRGB(0,0,255), DamageBoost = 1, SpeedBoost = 1.2},
+    Green = {Color = Color3.fromRGB(0,255,0), DamageBoost = 1, SpeedBoost = 1},
+    -- Add more colors with abilities
+}
 
-1. After Studio finishes installing, a pop-up confirmation displays. Click the **Launch&nbsp;Studio** button.
+local currentColor = "Red"
+local energyAmount = 100
+local maxEnergy = 100
+local energyDrainRate = 5  -- per second when using ability
 
-1. Sign in to Studio with your Roblox account (if you don't have an account, create one at [roblox.com](https://www.roblox.com/)).
+-- Create Aura
+local aura = Instance.new("Part")
+aura.Name = "ColorEnergyAura"
+aura.Size = Vector3.new(5,5,5)
+aura.Transparency = 0.5
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergy[currentColor].Color
+aura.Parent = workspace
 
-## Customization
+-- Function to switch color
+local function switchColor(newColor)
+    if ColorEnergy[newColor] then
+        currentColor = newColor
+        aura.Color = ColorEnergy[currentColor].Color
+    end
+end
 
-Many customization options are accessible via **Studio Settings** (<kbd>Alt</kbd><kbd>S</kbd> on Windows; <kbd>⌥</kbd><kbd>S</kbd> on Mac). You can quickly locate known settings by typing keywords into the search field at the top of the window. For example, search for `theme` to explicitly set Studio to dark theme or light theme.
+-- Function to use energy ability
+local function useEnergy(amount)
+    if energyAmount >= amount then
+        energyAmount = energyAmount - amount
+        return true
+    else
+        return false
+    end
+end
 
-<img src="../assets/studio/general/Studio-Settings-Layout.png" width="750" alt="A close up view of the Studio Settings window." />
+-- Example: Recharge energy
+local function rechargeEnergy(dt)
+    energyAmount = math.min(maxEnergy, energyAmount + (10 * dt))
+end
 
-<Alert severity="success">
-In addition to general settings, you can customize Studio's [window layout](../studio/ui-overview.md#layout-customization) to best suit your workflows.
-</Alert>
+-- Aura and energy updates
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local scale = (math.sin(tick() * 3) + 1)/2 + 0.5
+        aura.Size = Vector3.new(5,5,5) * scale
+        aura.Transparency = 0.5 - (scale/4)
+    end
+    rechargeEnergy(dt)
+end)
 
-## Updates
+-- Example key input for switching colors (optional)
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.One then
+        switchColor("Red")
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        switchColor("Blue")
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        switchColor("Green")
+    end
+end)
+-- LocalScript (StarterPlayerScripts)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
-In contrast to certain other engines, every experience runs on the latest version of the Roblox Engine. You should keep Studio up‑to‑date to utilize the latest APIs and features.
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-If your current version of Studio is outdated, you'll see an **Update Available** button in the upper-right corner. Clicking the button will prompt you to save/close the currently open place so that Studio can automatically update and restart.
+-- ===== Color Energy System =====
+local ColorEnergyData = {
+    Red = {Color = Color3.fromRGB(255,0,0), DamageBoost = 1.5, SpeedBoost = 1, Ability = "FireSlash"},
+    Blue = {Color = Color3.fromRGB(0,0,255), DamageBoost = 1.2, SpeedBoost = 1.2, Ability = "WaterShield"},
+    Green = {Color = Color3.fromRGB(0,255,0), DamageBoost = 1, SpeedBoost = 1, Ability = "HealingAura"},
+    Silver = {Color = Color3.fromRGB(192,192,192), DamageBoost = 1.3, SpeedBoost = 1.1, Ability = "ReflectBarrier"},
+    -- Add more colors based on story
+}
 
-<img src="../assets/studio/general/Toolbar-Update-Prompt.png" width="754" alt="Studio's Model tab with the Update Studio button highlighted." />
+local currentColor = "Red"
+local energyAmount = 100
+local maxEnergy = 100
+local energyDrainRate = 20 -- per second when using ability
 
-## Beta features
+-- ===== Aura Setup =====
+local aura = Instance.new("Part")
+aura.Name = "ColorEnergyAura"
+aura.Size = Vector3.new(5,5,5)
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergyData[currentColor].Color
+aura.Transparency = 0.5
+aura.Parent = workspace
 
-Many beta features are available through Studio's **File**&nbsp;&rang; **Beta&nbsp;Features** menu. Once you've enabled beta features, click the **Save** button and you'll be prompted to restart Studio for the features to take effect.
+-- ===== Functions =====
+local function switchColor(newColor)
+    if ColorEnergyData[newColor] then
+        currentColor = newColor
+        aura.Color = ColorEnergyData[currentColor].Color
+        print("Switched to color:", currentColor)
+    end
+end
+
+local function useAbility()
+    if energyAmount >= energyDrainRate then
+        energyAmount = energyAmount - energyDrainRate
+        local ability = ColorEnergyData[currentColor].Ability
+        print("Using ability:", ability)
+        -- TODO: Implement ability effects (damage, shield, healing)
+    else
+        print("Not enough energy!")
+    end
+end
+
+local function rechargeEnergy(dt)
+    energyAmount = math.min(maxEnergy, energyAmount + (10 * dt))
+end
+
+-- ===== Aura Update =====
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local pulse = (math.sin(tick() * 3) + 1)/2 + 0.5
+        aura.Size = Vector3.new(5,5,5) * pulse
+        aura.Transparency = 0.5 - (pulse/4)
+    end
+    rechargeEnergy(dt)
+end)
+
+-- ===== Input Controls =====
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then
+        switchColor("Red")
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        switchColor("Blue")
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        switchColor("Green")
+    elseif input.KeyCode == Enum.KeyCode.Four then
+        switchColor("Silver")
+    elseif input.KeyCode == Enum.KeyCode.E then
+        useAbility()
+    end
+end)
+-- LocalScript (StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- ===== Color Energy Data =====
+local ColorEnergyData = {
+    Red = {Color = Color3.fromRGB(255,0,0), DamageBoost = 1.5, SpeedBoost = 1, Ability = "FireSlash", EnergyDrain = 20},
+    Blue = {Color = Color3.fromRGB(0,0,255), DamageBoost = 1.2, SpeedBoost = 1.2, Ability = "WaterShield", EnergyDrain = 15},
+    Green = {Color = Color3.fromRGB(0,255,0), DamageBoost = 1, SpeedBoost = 1, Ability = "HealingAura", EnergyDrain = 10},
+    Silver = {Color = Color3.fromRGB(192,192,192), DamageBoost = 1.3, SpeedBoost = 1.1, Ability = "ReflectBarrier", EnergyDrain = 25},
+    -- Add more colors if needed
+}
+
+local currentColor = "Red"
+local maxEnergy = 100
+local energyAmount = maxEnergy
+local energyRechargeRate = 10 -- per second
+
+-- ===== Aura Setup =====
+local aura = Instance.new("Part")
+aura.Name = "ColorEnergyAura"
+aura.Size = Vector3.new(5,5,5)
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergyData[currentColor].Color
+aura.Transparency = 0.5
+aura.Parent = workspace
+
+-- ===== Functions =====
+local function switchColor(newColor)
+    if ColorEnergyData[newColor] then
+        currentColor = newColor
+        aura.Color = ColorEnergyData[currentColor].Color
+        print("Switched to color:", currentColor)
+    end
+end
+
+local function useAbility()
+    local data = ColorEnergyData[currentColor]
+    if energyAmount >= data.EnergyDrain then
+        energyAmount = energyAmount - data.EnergyDrain
+        print("Using ability:", data.Ability)
+        
+        -- ===== Ability Effects =====
+        if data.Ability == "FireSlash" then
+            -- Example: Create a short red slash effect in front of player
+            local slash = Instance.new("Part")
+            slash.Size = Vector3.new(1,5,10)
+            slash.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+            slash.Anchored = true
+            slash.CanCollide = false
+            slash.Material = Enum.Material.Neon
+            slash.Color = data.Color
+            slash.Parent = workspace
+            game.Debris:AddItem(slash, 0.5)
+            
+        elseif data.Ability == "WaterShield" then
+            -- Example: Create a blue shield around player
+            local shield = Instance.new("Part")
+            shield.Size = Vector3.new(6,6,6)
+            shield.CFrame = humanoidRootPart.CFrame
+            shield.Anchored = true
+            shield.CanCollide = false
+            shield.Material = Enum.Material.Neon
+            shield.Color = data.Color
+            shield.Transparency = 0.4
+            shield.Parent = workspace
+            game.Debris:AddItem(shield, 2)
+            
+        elseif data.Ability == "HealingAura" then
+            -- Heal the player
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + 30)
+            end
+            
+        elseif data.Ability == "ReflectBarrier" then
+            -- Example: temporary barrier effect
+            local barrier = Instance.new("Part")
+            barrier.Size = Vector3.new(7,7,7)
+            barrier.CFrame = humanoidRootPart.CFrame
+            barrier.Anchored = true
+            barrier.CanCollide = false
+            barrier.Material = Enum.Material.Neon
+            barrier.Color = data.Color
+            barrier.Transparency = 0.6
+            barrier.Parent = workspace
+            game.Debris:AddItem(barrier, 3)
+        end
+    else
+        print("Not enough energy!")
+    end
+end
+
+local function rechargeEnergy(dt)
+    energyAmount = math.min(maxEnergy, energyAmount + energyRechargeRate * dt)
+end
+
+-- ===== Aura & Energy Update =====
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local pulse = (math.sin(tick() * 3) + 1)/2 + 0.5
+        aura.Size = Vector3.new(5,5,5) * pulse
+        aura.Transparency = 0.5 - (pulse/4)
+    end
+    rechargeEnergy(dt)
+end)
+
+-- ===== Input Controls =====
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then
+        switchColor("Red")
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        switchColor("Blue")
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        switchColor("Green")
+    elseif input.KeyCode == Enum.KeyCode.Four then
+        switchColor("Silver")
+    elseif input.KeyCode == Enum.KeyCode.E then
+        useAbility()
+    end
+end)
+-- LocalScript (StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- ===== Color Energy Data =====
+local ColorEnergyData = {
+    Red = {Color = Color3.fromRGB(255,0,0), DamageBoost = 1.5, SpeedBoost = 1, Ability = "FireSlash", EnergyDrain = 20, Level = 1, Exp = 0},
+    Blue = {Color = Color3.fromRGB(0,0,255), DamageBoost = 1.2, SpeedBoost = 1.2, Ability = "WaterShield", EnergyDrain = 15, Level = 1, Exp = 0},
+    Green = {Color = Color3.fromRGB(0,255,0), DamageBoost = 1, SpeedBoost = 1, Ability = "HealingAura", EnergyDrain = 10, Level = 1, Exp = 0},
+    Silver = {Color = Color3.fromRGB(192,192,192), DamageBoost = 1.3, SpeedBoost = 1.1, Ability = "ReflectBarrier", EnergyDrain = 25, Level = 1, Exp = 0},
+}
+
+local currentColor = "Red"
+local maxEnergy = 100
+local energyAmount = maxEnergy
+local energyRechargeRate = 10 -- per second
+
+-- ===== Aura Setup =====
+local aura = Instance.new("Part")
+aura.Name = "ColorEnergyAura"
+aura.Size = Vector3.new(5,5,5)
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergyData[currentColor].Color
+aura.Transparency = 0.5
+aura.Parent = workspace
+
+-- ===== UI Setup =====
+local PlayerGui = player:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ColorEnergyUI"
+screenGui.Parent = PlayerGui
+
+local energyBar = Instance.new("Frame")
+energyBar.Size = UDim2.new(0.3,0,0.03,0)
+energyBar.Position = UDim2.new(0.35,0,0.9,0)
+energyBar.BackgroundColor3 = Color3.fromRGB(50,50,50)
+energyBar.BorderSizePixel = 2
+energyBar.Parent = screenGui
+
+local energyFill = Instance.new("Frame")
+energyFill.Size = UDim2.new(1,0,1,0)
+energyFill.BackgroundColor3 = ColorEnergyData[currentColor].Color
+energyFill.BorderSizePixel = 0
+energyFill.Parent = energyBar
+
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Size = UDim2.new(0.3,0,0.03,0)
+colorLabel.Position = UDim2.new(0.35,0,0.87,0)
+colorLabel.BackgroundTransparency = 1
+colorLabel.TextColor3 = ColorEnergyData[currentColor].Color
+colorLabel.Text = currentColor.." Lv."..ColorEnergyData[currentColor].Level
+colorLabel.Font = Enum.Font.SourceSansBold
+colorLabel.TextScaled = true
+colorLabel.Parent = screenGui
+
+-- ===== Functions =====
+local function switchColor(newColor)
+    if ColorEnergyData[newColor] then
+        currentColor = newColor
+        aura.Color = ColorEnergyData[currentColor].Color
+        energyFill.BackgroundColor3 = ColorEnergyData[currentColor].Color
+        colorLabel.TextColor3 = ColorEnergyData[currentColor].Color
+        colorLabel.Text = currentColor.." Lv."..ColorEnergyData[currentColor].Level
+    end
+end
+
+local function gainExp(color, amount)
+    local data = ColorEnergyData[color]
+    data.Exp = data.Exp + amount
+    if data.Exp >= data.Level * 100 then
+        data.Exp = data.Exp - data.Level * 100
+        data.Level = data.Level + 1
+        print(color.." leveled up! Now Lv."..data.Level)
+        colorLabel.Text = currentColor.." Lv."..ColorEnergyData[currentColor].Level
+    end
+end
+
+local function useAbility()
+    local data = ColorEnergyData[currentColor]
+    if energyAmount >= data.EnergyDrain then
+        energyAmount = energyAmount - data.EnergyDrain
+        print("Using ability:", data.Ability)
+        
+        -- Ability effects (can expand with animations & combos)
+        if data.Ability == "FireSlash" then
+            local slash = Instance.new("Part")
+            slash.Size = Vector3.new(1,5,10)
+            slash.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+            slash.Anchored = true
+            slash.CanCollide = false
+            slash.Material = Enum.Material.Neon
+            slash.Color = data.Color
+            slash.Parent = workspace
+            game.Debris:AddItem(slash, 0.5)
+            
+        elseif data.Ability == "WaterShield" then
+            local shield = Instance.new("Part")
+            shield.Size = Vector3.new(6,6,6)
+            shield.CFrame = humanoidRootPart.CFrame
+            shield.Anchored = true
+            shield.CanCollide = false
+            shield.Material = Enum.Material.Neon
+            shield.Color = data.Color
+            shield.Transparency = 0.4
+            shield.Parent = workspace
+            game.Debris:AddItem(shield, 2)
+            
+        elseif data.Ability == "HealingAura" then
+            humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + 30)
+            
+        elseif data.Ability == "ReflectBarrier" then
+            local barrier = Instance.new("Part")
+            barrier.Size = Vector3.new(7,7,7)
+            barrier.CFrame = humanoidRootPart.CFrame
+            barrier.Anchored = true
+            barrier.CanCollide = false
+            barrier.Material = Enum.Material.Neon
+            barrier.Color = data.Color
+            barrier.Transparency = 0.6
+            barrier.Parent = workspace
+            game.Debris:AddItem(barrier, 3)
+        end
+        
+        -- Gain exp for using ability
+        gainExp(currentColor, 20)
+        
+    else
+        print("Not enough energy!")
+    end
+end
+
+local function rechargeEnergy(dt)
+    energyAmount = math.min(maxEnergy, energyAmount + energyRechargeRate * dt)
+end
+
+-- ===== Aura & Energy Update =====
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local pulse = (math.sin(tick() * 3) + 1)/2 + 0.5
+        aura.Size = Vector3.new(5,5,5) * pulse
+        aura.Transparency = 0.5 - (pulse/4)
+    end
+    rechargeEnergy(dt)
+    energyFill.Size = UDim2.new(energyAmount/maxEnergy,0,1,0)
+end)
+
+-- ===== Input Controls =====
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then
+        switchColor("Red")
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        switchColor("Blue")
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        switchColor("Green")
+    elseif input.KeyCode == Enum.KeyCode.Four then
+        switchColor("Silver")
+    elseif input.KeyCode == Enum.KeyCode.E then
+        useAbility()
+    end
+end)
+-- LocalScript (StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- ===== Color Energy Data with Combos =====
+local ColorEnergyData = {
+    Red = {Color = Color3.fromRGB(255,0,0), Ability = "FireSlash", EnergyDrain = 20, Level=1, Exp=0},
+    Blue = {Color = Color3.fromRGB(0,0,255), Ability = "WaterShield", EnergyDrain = 15, Level=1, Exp=0},
+    Green = {Color = Color3.fromRGB(0,255,0), Ability = "HealingAura", EnergyDrain = 10, Level=1, Exp=0},
+    Silver = {Color = Color3.fromRGB(192,192,192), Ability = "ReflectBarrier", EnergyDrain = 25, Level=1, Exp=0},
+}
+
+local currentColor = "Red"
+local maxEnergy = 100
+local energyAmount = maxEnergy
+local energyRechargeRate = 10 -- per second
+
+-- ===== Aura Setup =====
+local aura = Instance.new("Part")
+aura.Size = Vector3.new(5,5,5)
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergyData[currentColor].Color
+aura.Transparency = 0.5
+aura.Parent = workspace
+
+-- ===== Combo System =====
+local comboQueue = {}
+local comboResetTime = 1.2 -- seconds to reset combo
+local comboTimer = 0
+
+local function addToCombo(ability)
+    table.insert(comboQueue, ability)
+    comboTimer = comboResetTime
+end
+
+local function executeCombo()
+    if #comboQueue == 2 then
+        if comboQueue[1] == "FireSlash" and comboQueue[2] == "WaterShield" then
+            -- Example combo: Fire + Water = SteamBlast
+            local effect = Instance.new("Part")
+            effect.Size = Vector3.new(8,8,8)
+            effect.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+            effect.Anchored = true
+            effect.CanCollide = false
+            effect.Material = Enum.Material.Neon
+            effect.Color = Color3.fromRGB(255,128,0)
+            effect.Parent = workspace
+            game.Debris:AddItem(effect, 1)
+            print("Combo Executed: SteamBlast!")
+        end
+    end
+    comboQueue = {}
+end
+
+-- ===== Ability Usage =====
+local function useAbility(hold=false)
+    local data = ColorEnergyData[currentColor]
+    if energyAmount >= data.EnergyDrain then
+        if hold then
+            -- Charged ability
+            energyAmount = energyAmount - data.EnergyDrain*2
+            print("Charged Ability:", data.Ability.." (Power Boost)")
+        else
+            energyAmount = energyAmount - data.EnergyDrain
+            print("Using Ability:", data.Ability)
+        end
+        
+        -- Add to combo system
+        addToCombo(data.Ability)
+        
+        -- Simple ability visual
+        local part = Instance.new("Part")
+        part.Size = Vector3.new(1,5,10)
+        part.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+        part.Anchored = true
+        part.CanCollide = false
+        part.Material = Enum.Material.Neon
+        part.Color = data.Color
+        part.Parent = workspace
+        game.Debris:AddItem(part,0.5)
+    else
+        print("Not enough energy!")
+    end
+end
+
+-- ===== Energy Recharge =====
+local function rechargeEnergy(dt)
+    energyAmount = math.min(maxEnergy, energyAmount + energyRechargeRate * dt)
+end
+
+-- ===== Aura & Energy Update =====
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local pulse = (math.sin(tick()*3)+1)/2 +0.5
+        aura.Size = Vector3.new(5,5,5) * pulse
+        aura.Transparency = 0.5 - pulse/4
+    end
+    rechargeEnergy(dt)
+    
+    -- Combo Timer
+    if comboTimer > 0 then
+        comboTimer = comboTimer - dt
+    else
+        if #comboQueue > 0 then
+            executeCombo()
+        end
+    end
+end)
+
+-- ===== Input Controls =====
+local holdingKey = false
+local holdStartTime = 0
+local holdThreshold = 1.0 -- seconds to trigger charged ability
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then currentColor="Red"; aura.Color=ColorEnergyData.Red.Color end
+    if input.KeyCode == Enum.KeyCode.Two then currentColor="Blue"; aura.Color=ColorEnergyData.Blue.Color end
+    if input.KeyCode == Enum.KeyCode.Three then currentColor="Green"; aura.Color=ColorEnergyData.Green.Color end
+    if input.KeyCode == Enum.KeyCode.Four then currentColor="Silver"; aura.Color=ColorEnergyData.Silver.Color end
+    
+    if input.KeyCode == Enum.KeyCode.E then
+        holdingKey = true
+        holdStartTime = tick()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, processed)
+    if input.KeyCode == Enum.KeyCode.E and holdingKey then
+        holdingKey = false
+        local heldTime = tick() - holdStartTime
+        if heldTime >= holdThreshold then
+            useAbility(true) -- Charged Ability
+        else
+            useAbility(false) -- Normal Ability
+        end
+    end
+end)
+-- LocalScript (StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- ===== Color Energy Data =====
+local ColorEnergyData = {
+    Red = {Color = Color3.fromRGB(255,0,0), Ability = "FireSlash", EnergyDrain = 20, Cooldown = 1.5},
+    Blue = {Color = Color3.fromRGB(0,0,255), Ability = "WaterShield", EnergyDrain = 15, Cooldown = 2},
+    Green = {Color = Color3.fromRGB(0,255,0), Ability = "HealingAura", EnergyDrain = 10, Cooldown = 3},
+    Silver = {Color = Color3.fromRGB(192,192,192), Ability = "ReflectBarrier", EnergyDrain = 25, Cooldown = 4},
+}
+
+local currentColor = "Red"
+local maxEnergy = 100
+local energyAmount = maxEnergy
+local energyRechargeRate = 10
+local cooldownTimers = {} -- track cooldowns per ability
+
+-- ===== Aura Setup =====
+local aura = Instance.new("Part")
+aura.Size = Vector3.new(5,5,5)
+aura.Anchored = true
+aura.CanCollide = false
+aura.Material = Enum.Material.Neon
+aura.Color = ColorEnergyData[currentColor].Color
+aura.Transparency = 0.5
+aura.Parent = Workspace
+
+-- ===== Ability System =====
+local function useAbility(charged)
+    local data = ColorEnergyData[currentColor]
+    if cooldownTimers[data.Ability] and cooldownTimers[data.Ability] > 0 then
+        print(data.Ability.." is on cooldown!")
+        return
+    end
+    
+    if energyAmount >= data.EnergyDrain then
+        energyAmount = energyAmount - data.EnergyDrain
+        print("Used Ability:", data.Ability, charged and "(Charged)" or "")
+        
+        -- Ability visuals
+        local effect = Instance.new("Part")
+        effect.Size = Vector3.new(1,5,10)
+        if charged then
+            effect.Size = effect.Size * 1.5
+        end
+        effect.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+        effect.Anchored = true
+        effect.CanCollide = false
+        effect.Material = Enum.Material.Neon
+        effect.Color = data.Color
+        effect.Parent = Workspace
+        game.Debris:AddItem(effect, 0.5)
+        
+        -- Cooldown start
+        cooldownTimers[data.Ability] = data.Cooldown
+    else
+        print("Not enough energy!")
+    end
+end
+
+-- ===== Combo System =====
+local comboQueue = {}
+local comboResetTime = 1.2
+local comboTimer = 0
+
+local function addToCombo(ability)
+    table.insert(comboQueue, ability)
+    comboTimer = comboResetTime
+end
+
+local function executeCombo()
+    if #comboQueue == 2 then
+        -- Example: Red + Blue = SteamBlast
+        if comboQueue[1]=="FireSlash" and comboQueue[2]=="WaterShield" then
+            print("Combo Activated: SteamBlast!")
+            local effect = Instance.new("Part")
+            effect.Size = Vector3.new(8,8,8)
+            effect.CFrame = humanoidRootPart.CFrame * CFrame.new(0,0,-5)
+            effect.Anchored = true
+            effect.CanCollide = false
+            effect.Material = Enum.Material.Neon
+            effect.Color = Color3.fromRGB(255,128,0)
+            effect.Parent = Workspace
+            game.Debris:AddItem(effect,1)
+        end
+    end
+    comboQueue = {}
+end
+
+-- ===== Input Controls =====
+local holdingKey = false
+local holdStartTime = 0
+local holdThreshold = 1.0
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then currentColor="Red"; aura.Color=ColorEnergyData.Red.Color end
+    if input.KeyCode == Enum.KeyCode.Two then currentColor="Blue"; aura.Color=ColorEnergyData.Blue.Color end
+    if input.KeyCode == Enum.KeyCode.Three then currentColor="Green"; aura.Color=ColorEnergyData.Green.Color end
+    if input.KeyCode == Enum.KeyCode.Four then currentColor="Silver"; aura.Color=ColorEnergyData.Silver.Color end
+    
+    if input.KeyCode == Enum.KeyCode.E then
+        holdingKey = true
+        holdStartTime = tick()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, processed)
+    if input.KeyCode==Enum.KeyCode.E and holdingKey then
+        holdingKey = false
+        local heldTime = tick() - holdStartTime
+        local charged = heldTime >= holdThreshold
+        useAbility(charged)
+        addToCombo(ColorEnergyData[currentColor].Ability)
+    end
+end)
+
+-- ===== Update Loop =====
+RunService.RenderStepped:Connect(function(dt)
+    if humanoidRootPart then
+        aura.Position = humanoidRootPart.Position
+        local pulse = (math.sin(tick()*3)+1)/2 +0.5
+        aura.Size = Vector3.new(5,5,5)*pulse
+        aura.Transparency = 0.5 - pulse/4
+    end
+    
+    -- Recharge energy
+    energyAmount = math.min(maxEnergy, energyAmount + energyRechargeRate*dt)
+    
+    -- Update cooldowns
+    for ability,timer in pairs(cooldownTimers) do
+        if timer>0 then
+            cooldownTimers[ability]=math.max(0,timer-dt)
+        end
+    end
+    
+    -- Combo timer
+    if comboTimer>0 then
+        comboTimer = comboTimer - dt
+    else
+        if #comboQueue>0 then executeCombo() end
+    end
+end)
+
+-- ===== PvE Enemy Example =====
+local function spawnEnemy(position)
+    local enemy = Instance.new("Part")
+    enemy.Size = Vector3.new(4,6,4)
+    enemy.Position = position
+    enemy.Anchored = false
+    enemy.Material = Enum.Material.SmoothPlastic
+    enemy.Color = Color3.fromRGB(80,80,80)
+    enemy.Name = "Enemy"
+    enemy.Parent = Workspace
+    
+    local enemyHumanoid = Instance.new("Humanoid")
+    enemyHumanoid.Health = 100
+    enemyHumanoid.MaxHealth = 100
+    enemyHumanoid.Parent = enemy
+    
+    return enemy
+end
+
+-- Example: spawn an enemy
+spawnEnemy(humanoidRootPart.Position + Vector3.new(0,0,-15))
